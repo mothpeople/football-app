@@ -28,13 +28,14 @@ module.exports = async (req, res) => {
         }
 
         // 4. Fetch from Real API (DIRECT API-SPORTS VERSION)
+        // Calculate today's date (UTC) to ensure we get a full list of games
+        const today = new Date().toISOString().split('T')[0];
+
         const options = {
             method: 'GET',
-            // Changed from RapidAPI URL to Direct URL
             url: 'https://v3.football.api-sports.io/fixtures',
-            params: { live: 'all' }, 
+            params: { date: today }, // CHANGED: Fetch 'Today' instead of just 'Live'
             headers: {
-                // Changed header from 'X-RapidAPI-Key' to 'x-apisports-key'
                 'x-apisports-key': process.env.API_KEY.trim()
             }
         };
@@ -44,7 +45,6 @@ module.exports = async (req, res) => {
         // 5. Transform & Return
         const rawMatches = response.data.response;
         
-        // If API returns success but 0 matches (common), we pass that through
         const cleanMatches = rawMatches.map(m => ({
             id: m.fixture.id,
             league: m.league.name,
@@ -54,7 +54,7 @@ module.exports = async (req, res) => {
             homeLogo: m.teams.home.logo,
             awayLogo: m.teams.away.logo,
             score: `${m.goals.home ?? 0} - ${m.goals.away ?? 0}`,
-            status: m.fixture.status.short,
+            status: m.fixture.status.short, // FT, NS (Not Started), 1H, etc.
             minute: m.fixture.status.elapsed + "'",
             events: m.events || [],
             stats: { 
@@ -70,13 +70,11 @@ module.exports = async (req, res) => {
     } catch (error) {
         console.error("BACKEND ERROR:", error.message);
         
-        // Extract the REAL error from API response
         let status = 500;
         let message = error.message;
 
         if (error.response) {
             status = error.response.status;
-            // API-Football often sends the reason in 'message' or 'errors' object
             message = JSON.stringify(error.response.data) || error.response.statusText;
         }
 
