@@ -496,7 +496,7 @@
         }
 
         // --- UI STATUS HELPER ---
-        function updateStatus(type) {
+        function updateStatus(type, msg) {
             const el = document.getElementById('connectionStatus');
             if (!el) return;
             
@@ -504,21 +504,69 @@
                 el.innerHTML = `<div class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div><span class="text-[10px] text-[var(--text-muted)]">Connecting...</span>`;
             } else if (type === 'success') {
                 el.innerHTML = `<div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-[10px] text-emerald-600 font-bold">Live Data</span>`;
+            } else if (type === 'success-empty') {
+                el.innerHTML = `<div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-[10px] text-emerald-600 font-bold">Live (No Games)</span>`;
             } else {
-                el.innerHTML = `<div class="w-2 h-2 rounded-full bg-orange-400"></div><span class="text-[10px] text-orange-500 font-medium">Mock Mode</span>`;
+                // Show error code if available
+                const errText = msg ? `Mock (${msg})` : 'Mock Mode';
+                el.innerHTML = `<div class="w-2 h-2 rounded-full bg-orange-400"></div><span class="text-[10px] text-orange-500 font-medium">${errText}</span>`;
             }
         }
 
         // --- COMPLETE MOCK DATA (Fallback) ---
+        // Stored here so the app works even if the server is offline or not yet deployed.
         const mockMatches = [
             // Premier League
             { id: 101, league: "Premier League", date: "Today", home: "Man City", away: "Liverpool", homeLogo: "🔵", awayLogo: "🔴", score: "2 - 2", status: "LIVE", minute: "78'", events: [{ type: "goal", team: "home", player: "E. Haaland", time: "12'" }], stats: { possession: [58, 42], shots: [14, 10], xg: [2.1, 1.8] } },
+            
             // SPL
             { id: 501, league: "SPL (Singapore)", date: "Today", home: "Lion City Sailors", away: "Tampines Rovers", homeLogo: "🦁", awayLogo: "🦌", score: "3 - 2", status: "FT", minute: "FT", events: [{ type: "goal", team: "home", player: "Lestienne", time: "22'" }], stats: { possession: [52, 48], shots: [12, 14], xg: [2.5, 2.1] } },
-            // ... (Rest of Mock Data stays same) ...
+            { id: 502, league: "SPL (Singapore)", date: "24 Nov", home: "Albirex Niigata (S)", away: "Lion City Sailors", homeLogo: "🦢", awayLogo: "🦁", score: "1 - 4", status: "FT", minute: "FT", events: [], stats: { possession: [40, 60], shots: [5, 12], xg: [0.5, 3.1] } },
+
+            // V-League
+            { id: 201, league: "V.League 1", date: "Today", home: "Cong An Ha Noi", away: "Hanoi FC", homeLogo: "👮", awayLogo: "🟣", score: "1 - 0", status: "LIVE", minute: "32'", events: [{ type: "goal", team: "home", player: "Quang Hai", time: "15'" }], stats: { possession: [45, 55], shots: [4, 6], xg: [0.8, 0.4] } },
+            
+            // J-League
+            { id: 801, league: "J1 League", date: "Today", home: "Vissel Kobe", away: "Gamba Osaka", homeLogo: "⚓", awayLogo: "⚡", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [50, 50], shots: [8, 8], xg: [1.1, 0.9] } },
+            
+            // K-League
+            { id: 802, league: "K League 1", date: "Today", home: "Ulsan HD", away: "Jeonbuk Motors", homeLogo: "🐯", awayLogo: "🟢", score: "1 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [55, 45], shots: [10, 8], xg: [1.2, 1.1] } },
+
+            // La Liga
+            { id: 401, league: "La Liga", date: "Yesterday", home: "Real Madrid", away: "Barcelona", homeLogo: "👑", awayLogo: "💙", score: "1 - 3", status: "FT", minute: "FT", events: [{ type: "goal", team: "away", player: "Lewandowski", time: "10'" }], stats: { possession: [45, 55], shots: [9, 15], xg: [1.2, 3.1] } },
+            
+            // Serie A
+            { id: 402, league: "Serie A", date: "Today", home: "Inter Milan", away: "Juventus", homeLogo: "⚫🔵", awayLogo: "⚫⚪", score: "0 - 0", status: "LIVE", minute: "15'", events: [], stats: { possession: [50, 50], shots: [2, 1], xg: [0.1, 0.1] } },
+            
+            // Ligue 1
+            { id: 403, league: "Ligue 1", date: "Today", home: "PSG", away: "Marseille", homeLogo: "🗼", awayLogo: "🔵", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0, 0], shots: [0, 0], xg: [0, 0] } },
+
+            // Champions League
+            { id: 301, league: "Champions League", date: "Tue", home: "Man City", away: "Feyenoord", homeLogo: "🔵", awayLogo: "🔴", score: "3 - 3", status: "FT", minute: "FT", events: [], stats: { possession: [60, 40], shots: [20, 5], xg: [3.5, 0.8] } },
+
+            // Europa League
+            { id: 302, league: "Europa League", date: "Thu", home: "Man Utd", away: "Bodo/Glimt", homeLogo: "🔴", awayLogo: "🟡", score: "3 - 2", status: "FT", minute: "FT", events: [], stats: { possession: [65, 35], shots: [18, 6], xg: [2.5, 0.9] } },
+            
+            // Conference League
+            { id: 303, league: "Conference League", date: "Thu", home: "Chelsea", away: "Heidenheim", homeLogo: "🔵", awayLogo: "🔴", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [70, 30], shots: [12, 4], xg: [2.1, 0.3] } },
+
+            // ACL Elite
+            { id: 304, league: "ACL Elite", date: "Yesterday", home: "Yokohama F. M.", away: "Buriram Utd", homeLogo: "⚓", awayLogo: "⚡", score: "3 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [62, 38], shots: [18, 5], xg: [3.2, 0.4] } },
+
+            // ACL 2
+            { id: 305, league: "ACL 2", date: "Wed", home: "Lion City Sailors", away: "Persib Bandung", homeLogo: "🦁", awayLogo: "🔵", score: "2 - 3", status: "FT", minute: "FT", events: [], stats: { possession: [48, 52], shots: [10, 12], xg: [1.5, 1.8] } },
+
+            // International / Euros / Asian Cup / WCQ
+            { id: 601, league: "World Cup Qualifiers", date: "Last Week", home: "Indonesia", away: "Saudi Arabia", homeLogo: "🦅", awayLogo: "🇸🇦", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [35, 65], shots: [5, 12], xg: [1.2, 0.8] } },
+            { id: 602, league: "UEFA EURO", date: "Final", home: "Spain", away: "England", homeLogo: "🇪🇸", awayLogo: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", score: "2 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [60, 40], shots: [15, 8], xg: [1.8, 0.9] } },
+            { id: 603, league: "AFC Asian Cup", date: "Final", home: "Jordan", away: "Qatar", homeLogo: "🇯🇴", awayLogo: "🇶🇦", score: "1 - 3", status: "FT", minute: "FT", events: [], stats: { possession: [45, 55], shots: [10, 12], xg: [1.1, 2.1] } },
+            { id: 604, league: "Friendlies", date: "Today", home: "Thailand", away: "Vietnam", homeLogo: "🇹🇭", awayLogo: "🇻🇳", score: "-", status: "19:30", minute: "", events: [], stats: { possession: [50, 50], shots: [0, 0], xg: [0, 0] } }
         ];
 
         // --- RENDER LOGIC ---
+
+        // GLOBAL variable to store fetched data so filtering works
+        let liveData = [];
 
         async function init() {
             lucide.createIcons();
@@ -526,9 +574,9 @@
             
             if (CONFIG.USE_LIVE_DATA) {
                 try {
-                    // Timeout after 5 seconds to prevent hanging
+                    // Timeout after 8 seconds to prevent hanging (Vercel cold start)
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
                     
                     const response = await fetch(CONFIG.API_URL, { signal: controller.signal });
                     clearTimeout(timeoutId);
@@ -539,15 +587,29 @@
                     
                     if (Array.isArray(data) && data.length > 0) {
                         updateStatus('success');
-                        renderMatches('All', data);
+                        liveData = data; // Save to global variable
+                        renderMatches('All', liveData);
+                    } else if (Array.isArray(data) && data.length === 0) {
+                        // Connection success, just no live matches
+                        updateStatus('success-empty');
+                        liveData = [];
+                        renderMatches('All', []); 
                     } else {
-                        console.warn("API returned empty array, using Mock");
-                        updateStatus('error');
+                        console.warn("API returned invalid format, using Mock");
+                        updateStatus('error', 'Bad Data');
+                        liveData = []; // Reset on bad data
                         renderMatches('All', mockMatches);
                     }
                 } catch(e) {
                     console.error("Live fetch failed:", e);
-                    updateStatus('error');
+                    // Extract safe error message
+                    let errMsg = "Error";
+                    if (e.message && e.message.includes("HTTP")) errMsg = e.message; 
+                    else if (e.name === 'TypeError') errMsg = "Network"; // often CORS or offline
+                    else if (e.name === 'AbortError') errMsg = "Timeout";
+                    
+                    updateStatus('error', errMsg);
+                    liveData = []; // Reset on error
                     renderMatches('All', mockMatches);
                 }
             } else {
@@ -556,7 +618,10 @@
             }
             
             document.getElementById('leagueSelect').addEventListener('change', (e) => {
-                renderMatches(e.target.value, CONFIG.USE_LIVE_DATA ? [] : mockMatches);
+                // Determine which source to use based on CONFIG and success status
+                // If we have live data, use it. If not (and using mock), use mock.
+                const source = (CONFIG.USE_LIVE_DATA && liveData.length > 0) ? liveData : mockMatches;
+                renderMatches(e.target.value, source);
             });
         }
 
@@ -566,6 +631,19 @@
             
             // Allow passing in data source (Mock vs Real)
             const source = matchesSource.length > 0 ? matchesSource : mockMatches;
+
+            // If source is empty AND we are in live mode, show specific message
+            if (matchesSource.length === 0 && CONFIG.USE_LIVE_DATA && liveData.length === 0) {
+                 container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-64 text-[var(--text-muted)]">
+                        <i data-lucide="calendar-check-2" class="w-12 h-12 mb-4 opacity-50 text-emerald-500"></i>
+                        <p class="font-medium">No live matches right now.</p>
+                        <p class="text-xs mt-1 opacity-75">Check back later for scores.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
 
             const matchesToRender = filterLeague === 'All' 
                 ? source 
