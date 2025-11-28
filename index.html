@@ -5,27 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>What's the Score?</title>
     
+    <!-- --- SOCIAL PREVIEW TAGS (FIX FOR WHATSAPP) --- -->
+    <meta property="og:title" content="What's the Score?">
+    <meta property="og:description" content="Live football scores from Premier League, SPL, Champions League and more.">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=1200&auto=format&fit=crop">
+    <meta property="og:url" content="https://football-app-livid.vercel.app">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=1200&auto=format&fit=crop">
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#fbf7ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Live scores from EPL, SPL, ACL, and more.">
-
-    <!-- SOCIAL SHARING / OPEN GRAPH TAGS -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="What's the Score?">
-    <meta property="og:description" content="Check live football scores from Premier League, SPL, Champions League and more.">
-    <!-- This points to the file you upload to your root folder -->
-    <meta property="og:image" content="/logo.png">
-    <!-- Twitter Card data -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="What's the Score?">
-    <meta name="twitter:description" content="Live football scores in your pocket.">
-    <meta name="twitter:image" content="/logo.png">
-    
-    <!-- FAVICON (The Logo) -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚽</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23fbf7ff%22/><text x=%2250%22 y=%2250%22 font-size=%2250%22 text-anchor=%22middle%22 dy=%22.35em%22>⚽</text></svg>">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -131,14 +124,7 @@
     <!-- Header -->
     <header class="flex-none px-5 py-4 flex items-center justify-between z-20 theme-bg-card border-b theme-border">
         <!-- Title (Clean) -->
-        <div class="flex flex-col">
-            <h1 class="text-xl font-bold tracking-tight font-display">What's the Score?</h1>
-            <!-- DEBUG STATUS LIGHT -->
-            <button id="connectionStatus" onclick="toggleLiveData()" class="flex items-center space-x-1 mt-1 focus:outline-none group">
-                <div class="w-2 h-2 rounded-full bg-blue-400 group-hover:animate-ping"></div>
-                <span class="text-[10px] text-blue-500 font-medium">Demo Mode (Tap to Connect)</span>
-            </button>
-        </div>
+        <h1 class="text-xl font-bold tracking-tight font-display">What's the Score?</h1>
         
         <div class="flex items-center space-x-3">
             <!-- Donate Button (Clean text) -->
@@ -231,11 +217,14 @@
         <div class="p-4 flex-1 overflow-y-auto pb-24 space-y-4">
             <h2 class="text-lg font-display font-bold px-2">Latest Headlines</h2>
             
-            <div id="news-container" class="space-y-4">
-                <!-- Loading State -->
-                <div class="flex flex-col items-center justify-center py-10 text-[var(--text-muted)] animate-pulse">
-                    <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-2"></i>
-                    <span class="text-xs">Loading Live News...</span>
+            <div class="card-gradient rounded-xl overflow-hidden shadow-sm">
+                <div class="h-32 bg-gray-200 relative">
+                     <img src="https://images.unsplash.com/photo-1522778119026-d647f0565c6a?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover">
+                     <div class="absolute bottom-0 left-0 bg-black/50 text-white text-[10px] px-2 py-1">SPL (Singapore)</div>
+                </div>
+                <div class="p-4">
+                    <h3 class="font-bold text-sm mb-1 text-[var(--text-main)]">Lion City Sailors secure crucial 3 points</h3>
+                    <p class="text-xs text-[var(--text-muted)] line-clamp-2">A dramatic late winner from Shawal Anuar keeps the title race alive as the Sailors edge past Tampines in a thriller.</p>
                 </div>
             </div>
         </div>
@@ -318,19 +307,6 @@
     </div>
 
     <script>
-        // --- APP CONFIGURATION ---
-        const CONFIG = {
-            // Set to TRUE to fetch from your Vercel backend. 
-            // The relative path '/api/matches' works automatically when deployed.
-            USE_LIVE_DATA: true, 
-            
-            // Your API Endpoint (Updated to your live Vercel URL)
-            API_URL: 'https://football-app-livid.vercel.app/api/matches',
-            
-            // Public RSS Feed for Real News (Proxy via rss2json to avoid CORS)
-            NEWS_RSS: 'https://feeds.bbci.co.uk/sport/football/rss.xml'
-        };
-
         // --- THEME LOGIC ---
         let isDark = false; 
         
@@ -369,60 +345,6 @@
 
             if (tabName === 'following') {
                 renderFollowing();
-            }
-            if (tabName === 'news') {
-                fetchRealNews(); // Trigger fetch when tab is opened
-            }
-        }
-
-        // --- REAL DATA: NEWS FETCHER ---
-        async function fetchRealNews() {
-            const container = document.getElementById('news-container');
-            // If already loaded, don't refetch
-            if (container.children.length > 1) return;
-
-            try {
-                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(CONFIG.NEWS_RSS)}`);
-                const data = await res.json();
-                
-                if (data.status === 'ok') {
-                    container.innerHTML = ''; // Clear loading
-                    data.items.slice(0, 10).forEach(item => {
-                        const img = item.thumbnail || `https://images.unsplash.com/photo-1522778119026-d647f0565c6a?auto=format&fit=crop&q=80&w=600&rnd=${Math.random()}`;
-                        
-                        const el = document.createElement('div');
-                        el.className = 'card-gradient rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer';
-                        el.onclick = () => window.open(item.link, '_blank');
-                        
-                        el.innerHTML = `
-                            <div class="h-32 bg-gray-200 relative">
-                                <img src="${img}" class="w-full h-full object-cover">
-                                <div class="absolute bottom-0 left-0 bg-black/50 text-white text-[10px] px-2 py-1">Football</div>
-                            </div>
-                            <div class="p-4">
-                                <h3 class="font-bold text-sm mb-1 text-[var(--text-main)] line-clamp-2">${item.title}</h3>
-                                <p class="text-xs text-[var(--text-muted)] line-clamp-2">${item.description.replace(/<[^>]*>?/gm, '')}</p>
-                                <div class="mt-3 flex justify-between items-center text-[10px] text-[var(--text-muted)]">
-                                    <span>${new Date(item.pubDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                    <span class="font-bold theme-text-accent flex items-center">Read <i data-lucide="external-link" class="w-3 h-3 ml-1"></i></span>
-                                </div>
-                            </div>
-                        `;
-                        container.appendChild(el);
-                    });
-                    lucide.createIcons();
-                } else {
-                    throw new Error("Feed failed");
-                }
-            } catch (e) {
-                container.innerHTML = `
-                    <div class="text-center py-10 text-[var(--text-muted)]">
-                        <i data-lucide="wifi-off" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-                        <p>Could not load live news.</p>
-                        <button onclick="fetchRealNews()" class="mt-4 text-xs theme-accent text-white px-3 py-1 rounded">Retry</button>
-                    </div>
-                `;
-                lucide.createIcons();
             }
         }
 
@@ -507,40 +429,9 @@
             lucide.createIcons();
         }
 
-        // --- UI STATUS HELPER ---
-        function updateStatus(type, msg) {
-            const el = document.getElementById('connectionStatus');
-            if (!el) return;
-            
-            if (type === 'connecting') {
-                el.innerHTML = `<div class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div><span class="text-[10px] text-[var(--text-muted)]">Connecting...</span>`;
-            } else if (type === 'success') {
-                el.innerHTML = `<div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-[10px] text-emerald-600 font-bold">Live Data</span>`;
-            } else if (type === 'success-empty') {
-                el.innerHTML = `<div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-[10px] text-emerald-600 font-bold">Live (No Games)</span>`;
-            } else if (type === 'manual-mock') { 
-                 el.innerHTML = `<div class="w-2 h-2 rounded-full bg-blue-400"></div><span class="text-[10px] text-blue-500 font-medium">Demo Mode</span>`;
-            } else {
-                // Show simplified error
-                let friendlyError = "Connection Error";
-                if (msg && msg.includes("Quota")) friendlyError = "Quota Limit Reached";
-                else if (msg && msg.includes("Forbidden")) friendlyError = "API Key Invalid";
-                else if (msg && msg.includes("500")) friendlyError = "Server Error";
-                
-                el.innerHTML = `<div class="w-2 h-2 rounded-full bg-orange-400"></div><span class="text-[10px] text-orange-500 font-medium">Mock (${friendlyError})</span>`;
-            }
-        }
 
-        // --- MANUAL RETRY TRIGGER ---
-        function toggleLiveData() {
-            // Flip the switch
-            CONFIG.USE_LIVE_DATA = !CONFIG.USE_LIVE_DATA;
-            // Rerun initialization with new setting
-            init();
-        }
-
-        // --- COMPLETE MOCK DATA (Fallback) ---
-        // Stored here so the app works even if the server is offline or not yet deployed.
+        // --- COMPLETE MOCK DATA FOR ALL COMPETITIONS ---
+        // Ensuring every single dropdown option has at least one result
         const mockMatches = [
             // Premier League
             { id: 101, league: "Premier League", date: "Today", home: "Man City", away: "Liverpool", homeLogo: "🔵", awayLogo: "🔴", score: "2 - 2", status: "LIVE", minute: "78'", events: [{ type: "goal", team: "home", player: "E. Haaland", time: "12'" }], stats: { possession: [58, 42], shots: [14, 10], xg: [2.1, 1.8] } },
@@ -591,88 +482,22 @@
 
         // --- RENDER LOGIC ---
 
-        // GLOBAL variable to store fetched data so filtering works
-        let liveData = [];
-
-        async function init() {
+        function init() {
             lucide.createIcons();
-            updateStatus('connecting');
-            
-            if (CONFIG.USE_LIVE_DATA) {
-                try {
-                    // Timeout after 8 seconds
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 8000);
-                    
-                    const response = await fetch(CONFIG.API_URL, { signal: controller.signal });
-                    clearTimeout(timeoutId);
-                    
-                    // IF BACKEND RETURNS ERROR (e.g. 429, 403), throw readable error
-                    if (!response.ok) {
-                        const errData = await response.json();
-                        throw new Error(errData.details || `HTTP ${response.status}`);
-                    }
-                    
-                    const data = await response.json();
-                    
-                    if (Array.isArray(data) && data.length > 0) {
-                        updateStatus('success');
-                        liveData = data; 
-                        renderMatches('All', liveData);
-                    } else if (Array.isArray(data) && data.length === 0) {
-                        updateStatus('success-empty');
-                        liveData = [];
-                        renderMatches('All', []); 
-                    } else {
-                        console.warn("API returned invalid format, using Mock");
-                        updateStatus('error', 'Bad Data');
-                        liveData = [];
-                        renderMatches('All', mockMatches);
-                    }
-                } catch(e) {
-                    console.error("Live fetch failed:", e);
-                    let errMsg = e.message;
-                    
-                    if (e.name === 'TypeError') errMsg = "Network"; 
-                    else if (e.name === 'AbortError') errMsg = "Timeout";
-                    
-                    updateStatus('error', errMsg);
-                    liveData = []; 
-                    renderMatches('All', mockMatches);
-                }
-            } else {
-                updateStatus('manual-mock'); 
-                renderMatches('All', mockMatches);
-            }
+            renderMatches('All');
             
             document.getElementById('leagueSelect').addEventListener('change', (e) => {
-                const source = (CONFIG.USE_LIVE_DATA && liveData.length > 0) ? liveData : mockMatches;
-                renderMatches(e.target.value, source);
+                renderMatches(e.target.value);
             });
         }
 
-        function renderMatches(filterLeague, matchesSource = mockMatches) {
+        function renderMatches(filterLeague) {
             const container = document.getElementById('matchList');
             container.innerHTML = '';
-            
-            const source = matchesSource.length > 0 ? matchesSource : mockMatches;
-
-            // Empty state handling
-            if (matchesSource.length === 0 && CONFIG.USE_LIVE_DATA && liveData.length === 0) {
-                 container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-64 text-[var(--text-muted)]">
-                        <i data-lucide="calendar-check-2" class="w-12 h-12 mb-4 opacity-50 text-emerald-500"></i>
-                        <p class="font-medium">No live matches right now.</p>
-                        <p class="text-xs mt-1 opacity-75">Check back later for scores.</p>
-                    </div>
-                `;
-                lucide.createIcons();
-                return;
-            }
 
             const matchesToRender = filterLeague === 'All' 
-                ? source 
-                : source.filter(m => m.league === filterLeague);
+                ? mockMatches 
+                : mockMatches.filter(m => m.league === filterLeague);
 
             if (matchesToRender.length === 0) {
                 container.innerHTML = `
@@ -685,8 +510,6 @@
                 return;
             }
 
-            // ... (rest of render logic remains same) ...
-            
             // In "Live & Top Matches" (All) view, filter to show Today/Live only for cleanliness
             // But if user explicitly selects a league, show everything for that league
             let displayMatches = matchesToRender;
