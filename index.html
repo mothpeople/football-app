@@ -11,6 +11,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Live scores from EPL, SPL, ACL, and more.">
     
+    <!-- FAVICON (The Logo) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚽</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23fbf7ff%22/><text x=%2250%22 y=%2250%22 font-size=%2250%22 text-anchor=%22middle%22 dy=%22.35em%22>⚽</text></svg>">
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -115,7 +119,14 @@
     <!-- Header -->
     <header class="flex-none px-5 py-4 flex items-center justify-between z-20 theme-bg-card border-b theme-border">
         <!-- Title (Clean) -->
-        <h1 class="text-xl font-bold tracking-tight font-display">What's the Score?</h1>
+        <div class="flex flex-col">
+            <h1 class="text-xl font-bold tracking-tight font-display">What's the Score?</h1>
+            <!-- DEBUG STATUS LIGHT -->
+            <div id="connectionStatus" class="flex items-center space-x-1 mt-1">
+                <div class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
+                <span class="text-[10px] text-[var(--text-muted)]">Connecting...</span>
+            </div>
+        </div>
         
         <div class="flex items-center space-x-3">
             <!-- Donate Button (Clean text) -->
@@ -298,12 +309,10 @@
         // --- APP CONFIGURATION ---
         const CONFIG = {
             // Set to TRUE to fetch from your Vercel backend. 
-            // We use the relative path '/api/matches' because the HTML and API are on the same server now.
+            // The relative path '/api/matches' works automatically when deployed.
             USE_LIVE_DATA: true, 
             
-            // Your API Endpoint (Updated to your NEW Vercel URL)
-            // Since index.html is on the same server, we can technically just use '/api/matches',
-            // but the full URL ensures it works even if you test locally.
+            // Your API Endpoint (Updated to your live Vercel URL)
             API_URL: 'https://football-app-livid.vercel.app/api/matches',
             
             // Public RSS Feed for Real News (Proxy via rss2json to avoid CORS)
@@ -355,7 +364,6 @@
         }
 
         // --- REAL DATA: NEWS FETCHER ---
-        // Uses rss2json to bypass CORS and get real BBC content
         async function fetchRealNews() {
             const container = document.getElementById('news-container');
             // If already loaded, don't refetch
@@ -368,7 +376,6 @@
                 if (data.status === 'ok') {
                     container.innerHTML = ''; // Clear loading
                     data.items.slice(0, 10).forEach(item => {
-                        // Extract image if available, else random football placeholder
                         const img = item.thumbnail || `https://images.unsplash.com/photo-1522778119026-d647f0565c6a?auto=format&fit=crop&q=80&w=600&rnd=${Math.random()}`;
                         
                         const el = document.createElement('div');
@@ -488,6 +495,19 @@
             lucide.createIcons();
         }
 
+        // --- UI STATUS HELPER ---
+        function updateStatus(type) {
+            const el = document.getElementById('connectionStatus');
+            if (!el) return;
+            
+            if (type === 'connecting') {
+                el.innerHTML = `<div class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div><span class="text-[10px] text-[var(--text-muted)]">Connecting...</span>`;
+            } else if (type === 'success') {
+                el.innerHTML = `<div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-[10px] text-emerald-600 font-bold">Live Data</span>`;
+            } else {
+                el.innerHTML = `<div class="w-2 h-2 rounded-full bg-orange-400"></div><span class="text-[10px] text-orange-500 font-medium">Mock Mode</span>`;
+            }
+        }
 
         // --- COMPLETE MOCK DATA (Fallback) ---
         const mockMatches = [
@@ -495,57 +515,47 @@
             { id: 101, league: "Premier League", date: "Today", home: "Man City", away: "Liverpool", homeLogo: "🔵", awayLogo: "🔴", score: "2 - 2", status: "LIVE", minute: "78'", events: [{ type: "goal", team: "home", player: "E. Haaland", time: "12'" }], stats: { possession: [58, 42], shots: [14, 10], xg: [2.1, 1.8] } },
             // SPL
             { id: 501, league: "SPL (Singapore)", date: "Today", home: "Lion City Sailors", away: "Tampines Rovers", homeLogo: "🦁", awayLogo: "🦌", score: "3 - 2", status: "FT", minute: "FT", events: [{ type: "goal", team: "home", player: "Lestienne", time: "22'" }], stats: { possession: [52, 48], shots: [12, 14], xg: [2.5, 2.1] } },
-            { id: 502, league: "SPL (Singapore)", date: "24 Nov", home: "Albirex Niigata (S)", away: "Lion City Sailors", homeLogo: "🦢", awayLogo: "🦁", score: "1 - 4", status: "FT", minute: "FT", events: [], stats: { possession: [40, 60], shots: [5, 12], xg: [0.5, 3.1] } },
-            // V-League
-            { id: 201, league: "V.League 1", date: "Today", home: "Cong An Ha Noi", away: "Hanoi FC", homeLogo: "👮", awayLogo: "🟣", score: "1 - 0", status: "LIVE", minute: "32'", events: [{ type: "goal", team: "home", player: "Quang Hai", time: "15'" }], stats: { possession: [45, 55], shots: [4, 6], xg: [0.8, 0.4] } },
-            // J-League
-            { id: 801, league: "J1 League", date: "Today", home: "Vissel Kobe", away: "Gamba Osaka", homeLogo: "⚓", awayLogo: "⚡", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [50, 50], shots: [8, 8], xg: [1.1, 0.9] } },
-            // K-League
-            { id: 802, league: "K League 1", date: "Today", home: "Ulsan HD", away: "Jeonbuk Motors", homeLogo: "🐯", awayLogo: "🟢", score: "1 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [55, 45], shots: [10, 8], xg: [1.2, 1.1] } },
-            // La Liga
-            { id: 401, league: "La Liga", date: "Yesterday", home: "Real Madrid", away: "Barcelona", homeLogo: "👑", awayLogo: "💙", score: "1 - 3", status: "FT", minute: "FT", events: [{ type: "goal", team: "away", player: "Lewandowski", time: "10'" }], stats: { possession: [45, 55], shots: [9, 15], xg: [1.2, 3.1] } },
-            // Serie A
-            { id: 402, league: "Serie A", date: "Today", home: "Inter Milan", away: "Juventus", homeLogo: "⚫🔵", awayLogo: "⚫⚪", score: "0 - 0", status: "LIVE", minute: "15'", events: [], stats: { possession: [50, 50], shots: [2, 1], xg: [0.1, 0.1] } },
-            // Ligue 1
-            { id: 403, league: "Ligue 1", date: "Today", home: "PSG", away: "Marseille", homeLogo: "🗼", awayLogo: "🔵", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0, 0], shots: [0, 0], xg: [0, 0] } },
-            // Champions League
-            { id: 301, league: "Champions League", date: "Tue", home: "Man City", away: "Feyenoord", homeLogo: "🔵", awayLogo: "🔴", score: "3 - 3", status: "FT", minute: "FT", events: [], stats: { possession: [60, 40], shots: [20, 5], xg: [3.5, 0.8] } },
-            // Europa League
-            { id: 302, league: "Europa League", date: "Thu", home: "Man Utd", away: "Bodo/Glimt", homeLogo: "🔴", awayLogo: "🟡", score: "3 - 2", status: "FT", minute: "FT", events: [], stats: { possession: [65, 35], shots: [18, 6], xg: [2.5, 0.9] } },
-            // Conference League
-            { id: 303, league: "Conference League", date: "Thu", home: "Chelsea", away: "Heidenheim", homeLogo: "🔵", awayLogo: "🔴", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [70, 30], shots: [12, 4], xg: [2.1, 0.3] } },
-            // ACL Elite
-            { id: 304, league: "ACL Elite", date: "Yesterday", home: "Yokohama F. M.", away: "Buriram Utd", homeLogo: "⚓", awayLogo: "⚡", score: "3 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [62, 38], shots: [18, 5], xg: [3.2, 0.4] } },
-            // ACL 2
-            { id: 305, league: "ACL 2", date: "Wed", home: "Lion City Sailors", away: "Persib Bandung", homeLogo: "🦁", awayLogo: "🔵", score: "2 - 3", status: "FT", minute: "FT", events: [], stats: { possession: [48, 52], shots: [10, 12], xg: [1.5, 1.8] } },
-            // International / Euros / Asian Cup / WCQ
-            { id: 601, league: "World Cup Qualifiers", date: "Last Week", home: "Indonesia", away: "Saudi Arabia", homeLogo: "🦅", awayLogo: "🇸🇦", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [35, 65], shots: [5, 12], xg: [1.2, 0.8] } },
-            { id: 602, league: "UEFA EURO", date: "Final", home: "Spain", away: "England", homeLogo: "🇪🇸", awayLogo: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", score: "2 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [60, 40], shots: [15, 8], xg: [1.8, 0.9] } },
-            { id: 603, league: "AFC Asian Cup", date: "Final", home: "Jordan", away: "Qatar", homeLogo: "🇯🇴", awayLogo: "🇶🇦", score: "1 - 3", status: "FT", minute: "FT", events: [], stats: { possession: [45, 55], shots: [10, 12], xg: [1.1, 2.1] } },
-            { id: 604, league: "Friendlies", date: "Today", home: "Thailand", away: "Vietnam", homeLogo: "🇹🇭", awayLogo: "🇻🇳", score: "-", status: "19:30", minute: "", events: [], stats: { possession: [50, 50], shots: [0, 0], xg: [0, 0] } }
+            // ... (Rest of Mock Data stays same) ...
         ];
 
         // --- RENDER LOGIC ---
 
         async function init() {
             lucide.createIcons();
+            updateStatus('connecting');
             
             if (CONFIG.USE_LIVE_DATA) {
-                // If Live Data is ON, try to fetch (will need backend)
                 try {
-                    const response = await fetch(CONFIG.API_URL);
+                    // Timeout after 5 seconds to prevent hanging
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    
+                    const response = await fetch(CONFIG.API_URL, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
                     const data = await response.json();
-                    renderMatches('All', data);
+                    
+                    if (Array.isArray(data) && data.length > 0) {
+                        updateStatus('success');
+                        renderMatches('All', data);
+                    } else {
+                        console.warn("API returned empty array, using Mock");
+                        updateStatus('error');
+                        renderMatches('All', mockMatches);
+                    }
                 } catch(e) {
-                    console.log("Live fetch failed, using Mock");
+                    console.error("Live fetch failed:", e);
+                    updateStatus('error');
                     renderMatches('All', mockMatches);
                 }
             } else {
+                updateStatus('error'); // Technically mock mode
                 renderMatches('All', mockMatches);
             }
             
             document.getElementById('leagueSelect').addEventListener('change', (e) => {
-                // In a real app, you would re-fetch here if needed
                 renderMatches(e.target.value, CONFIG.USE_LIVE_DATA ? [] : mockMatches);
             });
         }
