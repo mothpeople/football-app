@@ -10,6 +10,18 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Live scores from EPL, SPL, ACL, and more.">
+
+    <!-- SOCIAL SHARING / OPEN GRAPH TAGS -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="What's the Score?">
+    <meta property="og:description" content="Check live football scores from Premier League, SPL, Champions League and more.">
+    <!-- This points to the file you upload to your root folder -->
+    <meta property="og:image" content="/logo.png">
+    <!-- Twitter Card data -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="What's the Score?">
+    <meta name="twitter:description" content="Live football scores in your pocket.">
+    <meta name="twitter:image" content="/logo.png">
     
     <!-- FAVICON (The Logo) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚽</text></svg>">
@@ -122,10 +134,10 @@
         <div class="flex flex-col">
             <h1 class="text-xl font-bold tracking-tight font-display">What's the Score?</h1>
             <!-- DEBUG STATUS LIGHT -->
-            <div id="connectionStatus" class="flex items-center space-x-1 mt-1">
-                <div class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
-                <span class="text-[10px] text-[var(--text-muted)]">Connecting...</span>
-            </div>
+            <button id="connectionStatus" onclick="toggleLiveData()" class="flex items-center space-x-1 mt-1 focus:outline-none group">
+                <div class="w-2 h-2 rounded-full bg-blue-400 group-hover:animate-ping"></div>
+                <span class="text-[10px] text-blue-500 font-medium">Demo Mode (Tap to Connect)</span>
+            </button>
         </div>
         
         <div class="flex items-center space-x-3">
@@ -309,7 +321,7 @@
         // --- APP CONFIGURATION ---
         const CONFIG = {
             // Set to TRUE to fetch from your Vercel backend. 
-            // WE ARE NOW SWITCHING TO LIVE MODE.
+            // The relative path '/api/matches' works automatically when deployed.
             USE_LIVE_DATA: true, 
             
             // Your API Endpoint (Updated to your live Vercel URL)
@@ -506,13 +518,25 @@
                 el.innerHTML = `<div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-[10px] text-emerald-600 font-bold">Live Data</span>`;
             } else if (type === 'success-empty') {
                 el.innerHTML = `<div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-[10px] text-emerald-600 font-bold">Live (No Games)</span>`;
-            } else if (type === 'manual-mock') { // New state
+            } else if (type === 'manual-mock') { 
                  el.innerHTML = `<div class="w-2 h-2 rounded-full bg-blue-400"></div><span class="text-[10px] text-blue-500 font-medium">Demo Mode</span>`;
             } else {
-                // Show error code if available
-                const errText = msg ? `Mock (${msg})` : 'Mock Mode';
-                el.innerHTML = `<div class="w-2 h-2 rounded-full bg-orange-400"></div><span class="text-[10px] text-orange-500 font-medium">${errText}</span>`;
+                // Show simplified error
+                let friendlyError = "Connection Error";
+                if (msg && msg.includes("Quota")) friendlyError = "Quota Limit Reached";
+                else if (msg && msg.includes("Forbidden")) friendlyError = "API Key Invalid";
+                else if (msg && msg.includes("500")) friendlyError = "Server Error";
+                
+                el.innerHTML = `<div class="w-2 h-2 rounded-full bg-orange-400"></div><span class="text-[10px] text-orange-500 font-medium">Mock (${friendlyError})</span>`;
             }
+        }
+
+        // --- MANUAL RETRY TRIGGER ---
+        function toggleLiveData() {
+            // Flip the switch
+            CONFIG.USE_LIVE_DATA = !CONFIG.USE_LIVE_DATA;
+            // Rerun initialization with new setting
+            init();
         }
 
         // --- COMPLETE MOCK DATA (Fallback) ---
@@ -576,59 +600,52 @@
             
             if (CONFIG.USE_LIVE_DATA) {
                 try {
-                    // Timeout after 8 seconds to prevent hanging (Vercel cold start)
+                    // Timeout after 8 seconds
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 8000);
                     
                     const response = await fetch(CONFIG.API_URL, { signal: controller.signal });
                     clearTimeout(timeoutId);
                     
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    // IF BACKEND RETURNS ERROR (e.g. 429, 403), throw readable error
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(errData.details || `HTTP ${response.status}`);
+                    }
                     
                     const data = await response.json();
                     
                     if (Array.isArray(data) && data.length > 0) {
                         updateStatus('success');
-                        liveData = data; // Save to global variable
+                        liveData = data; 
                         renderMatches('All', liveData);
                     } else if (Array.isArray(data) && data.length === 0) {
-                        // Connection success, just no live matches
                         updateStatus('success-empty');
                         liveData = [];
                         renderMatches('All', []); 
                     } else {
                         console.warn("API returned invalid format, using Mock");
                         updateStatus('error', 'Bad Data');
-                        liveData = []; // Reset on bad data
+                        liveData = [];
                         renderMatches('All', mockMatches);
                     }
                 } catch(e) {
                     console.error("Live fetch failed:", e);
-                    // Extract safe error message
-                    let errMsg = "Error";
-                    if (e.message && e.message.includes("HTTP 500")) {
-                        errMsg = "Server Error";
-                        console.warn("HTTP 500 detected: Check Vercel Logs. Likely missing API Key or package.json.");
-                    } else if (e.message && e.message.includes("HTTP")) {
-                        errMsg = e.message; 
-                    } else if (e.name === 'TypeError') {
-                        errMsg = "Network"; // often CORS or offline
-                    } else if (e.name === 'AbortError') {
-                        errMsg = "Timeout";
-                    }
+                    let errMsg = e.message;
+                    
+                    if (e.name === 'TypeError') errMsg = "Network"; 
+                    else if (e.name === 'AbortError') errMsg = "Timeout";
                     
                     updateStatus('error', errMsg);
-                    liveData = []; // Reset on error
+                    liveData = []; 
                     renderMatches('All', mockMatches);
                 }
             } else {
-                updateStatus('manual-mock'); // Use the new neutral status
+                updateStatus('manual-mock'); 
                 renderMatches('All', mockMatches);
             }
             
             document.getElementById('leagueSelect').addEventListener('change', (e) => {
-                // Determine which source to use based on CONFIG and success status
-                // If we have live data, use it. If not (and using mock), use mock.
                 const source = (CONFIG.USE_LIVE_DATA && liveData.length > 0) ? liveData : mockMatches;
                 renderMatches(e.target.value, source);
             });
@@ -638,10 +655,9 @@
             const container = document.getElementById('matchList');
             container.innerHTML = '';
             
-            // Allow passing in data source (Mock vs Real)
             const source = matchesSource.length > 0 ? matchesSource : mockMatches;
 
-            // If source is empty AND we are in live mode, show specific message
+            // Empty state handling
             if (matchesSource.length === 0 && CONFIG.USE_LIVE_DATA && liveData.length === 0) {
                  container.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-64 text-[var(--text-muted)]">
@@ -669,6 +685,8 @@
                 return;
             }
 
+            // ... (rest of render logic remains same) ...
+            
             // In "Live & Top Matches" (All) view, filter to show Today/Live only for cleanliness
             // But if user explicitly selects a league, show everything for that league
             let displayMatches = matchesToRender;
