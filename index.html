@@ -298,11 +298,13 @@
         // --- APP CONFIGURATION ---
         const CONFIG = {
             // Set to TRUE to fetch from your Vercel backend. 
-            // Set to FALSE to use safe mock data for testing.
-            USE_LIVE_DATA: false, 
+            // We use the relative path '/api/matches' because the HTML and API are on the same server now.
+            USE_LIVE_DATA: true, 
             
-            // Your API Endpoint (Change this when you deploy your backend)
-            API_URL: '/api/matches',
+            // Your API Endpoint (Updated to your NEW Vercel URL)
+            // Since index.html is on the same server, we can technically just use '/api/matches',
+            // but the full URL ensures it works even if you test locally.
+            API_URL: 'https://football-app-livid.vercel.app/api/matches',
             
             // Public RSS Feed for Real News (Proxy via rss2json to avoid CORS)
             NEWS_RSS: 'https://feeds.bbci.co.uk/sport/football/rss.xml'
@@ -487,49 +489,35 @@
         }
 
 
-        // --- COMPLETE MOCK DATA FOR ALL COMPETITIONS ---
-        // Ensuring every single dropdown option has at least one result
+        // --- COMPLETE MOCK DATA (Fallback) ---
         const mockMatches = [
             // Premier League
             { id: 101, league: "Premier League", date: "Today", home: "Man City", away: "Liverpool", homeLogo: "🔵", awayLogo: "🔴", score: "2 - 2", status: "LIVE", minute: "78'", events: [{ type: "goal", team: "home", player: "E. Haaland", time: "12'" }], stats: { possession: [58, 42], shots: [14, 10], xg: [2.1, 1.8] } },
-            
             // SPL
             { id: 501, league: "SPL (Singapore)", date: "Today", home: "Lion City Sailors", away: "Tampines Rovers", homeLogo: "🦁", awayLogo: "🦌", score: "3 - 2", status: "FT", minute: "FT", events: [{ type: "goal", team: "home", player: "Lestienne", time: "22'" }], stats: { possession: [52, 48], shots: [12, 14], xg: [2.5, 2.1] } },
             { id: 502, league: "SPL (Singapore)", date: "24 Nov", home: "Albirex Niigata (S)", away: "Lion City Sailors", homeLogo: "🦢", awayLogo: "🦁", score: "1 - 4", status: "FT", minute: "FT", events: [], stats: { possession: [40, 60], shots: [5, 12], xg: [0.5, 3.1] } },
-
             // V-League
             { id: 201, league: "V.League 1", date: "Today", home: "Cong An Ha Noi", away: "Hanoi FC", homeLogo: "👮", awayLogo: "🟣", score: "1 - 0", status: "LIVE", minute: "32'", events: [{ type: "goal", team: "home", player: "Quang Hai", time: "15'" }], stats: { possession: [45, 55], shots: [4, 6], xg: [0.8, 0.4] } },
-            
             // J-League
             { id: 801, league: "J1 League", date: "Today", home: "Vissel Kobe", away: "Gamba Osaka", homeLogo: "⚓", awayLogo: "⚡", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [50, 50], shots: [8, 8], xg: [1.1, 0.9] } },
-            
             // K-League
             { id: 802, league: "K League 1", date: "Today", home: "Ulsan HD", away: "Jeonbuk Motors", homeLogo: "🐯", awayLogo: "🟢", score: "1 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [55, 45], shots: [10, 8], xg: [1.2, 1.1] } },
-
             // La Liga
             { id: 401, league: "La Liga", date: "Yesterday", home: "Real Madrid", away: "Barcelona", homeLogo: "👑", awayLogo: "💙", score: "1 - 3", status: "FT", minute: "FT", events: [{ type: "goal", team: "away", player: "Lewandowski", time: "10'" }], stats: { possession: [45, 55], shots: [9, 15], xg: [1.2, 3.1] } },
-            
             // Serie A
             { id: 402, league: "Serie A", date: "Today", home: "Inter Milan", away: "Juventus", homeLogo: "⚫🔵", awayLogo: "⚫⚪", score: "0 - 0", status: "LIVE", minute: "15'", events: [], stats: { possession: [50, 50], shots: [2, 1], xg: [0.1, 0.1] } },
-            
             // Ligue 1
             { id: 403, league: "Ligue 1", date: "Today", home: "PSG", away: "Marseille", homeLogo: "🗼", awayLogo: "🔵", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0, 0], shots: [0, 0], xg: [0, 0] } },
-
             // Champions League
             { id: 301, league: "Champions League", date: "Tue", home: "Man City", away: "Feyenoord", homeLogo: "🔵", awayLogo: "🔴", score: "3 - 3", status: "FT", minute: "FT", events: [], stats: { possession: [60, 40], shots: [20, 5], xg: [3.5, 0.8] } },
-
             // Europa League
             { id: 302, league: "Europa League", date: "Thu", home: "Man Utd", away: "Bodo/Glimt", homeLogo: "🔴", awayLogo: "🟡", score: "3 - 2", status: "FT", minute: "FT", events: [], stats: { possession: [65, 35], shots: [18, 6], xg: [2.5, 0.9] } },
-            
             // Conference League
             { id: 303, league: "Conference League", date: "Thu", home: "Chelsea", away: "Heidenheim", homeLogo: "🔵", awayLogo: "🔴", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [70, 30], shots: [12, 4], xg: [2.1, 0.3] } },
-
             // ACL Elite
             { id: 304, league: "ACL Elite", date: "Yesterday", home: "Yokohama F. M.", away: "Buriram Utd", homeLogo: "⚓", awayLogo: "⚡", score: "3 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [62, 38], shots: [18, 5], xg: [3.2, 0.4] } },
-
             // ACL 2
             { id: 305, league: "ACL 2", date: "Wed", home: "Lion City Sailors", away: "Persib Bandung", homeLogo: "🦁", awayLogo: "🔵", score: "2 - 3", status: "FT", minute: "FT", events: [], stats: { possession: [48, 52], shots: [10, 12], xg: [1.5, 1.8] } },
-
             // International / Euros / Asian Cup / WCQ
             { id: 601, league: "World Cup Qualifiers", date: "Last Week", home: "Indonesia", away: "Saudi Arabia", homeLogo: "🦅", awayLogo: "🇸🇦", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [35, 65], shots: [5, 12], xg: [1.2, 0.8] } },
             { id: 602, league: "UEFA EURO", date: "Final", home: "Spain", away: "England", homeLogo: "🇪🇸", awayLogo: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", score: "2 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [60, 40], shots: [15, 8], xg: [1.8, 0.9] } },
