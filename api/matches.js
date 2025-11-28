@@ -27,15 +27,15 @@ module.exports = async (req, res) => {
             throw new Error("SERVER CONFIG ERROR: API_KEY is missing in Vercel.");
         }
 
-        // 4. Fetch from Real API
+        // 4. Fetch from Real API (DIRECT API-SPORTS VERSION)
         const options = {
             method: 'GET',
-            url: 'https://api-football-v1.p.rapidapi.com/v3/fixtures',
+            // Changed from RapidAPI URL to Direct URL
+            url: 'https://v3.football.api-sports.io/fixtures',
             params: { live: 'all' }, 
             headers: {
-                // .trim() fixes the accidental space issue!
-                'X-RapidAPI-Key': process.env.API_KEY.trim(),
-                'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'
+                // Changed header from 'X-RapidAPI-Key' to 'x-apisports-key'
+                'x-apisports-key': process.env.API_KEY.trim()
             }
         };
 
@@ -70,13 +70,13 @@ module.exports = async (req, res) => {
     } catch (error) {
         console.error("BACKEND ERROR:", error.message);
         
-        // Extract the REAL error from RapidAPI response
+        // Extract the REAL error from API response
         let status = 500;
         let message = error.message;
 
         if (error.response) {
             status = error.response.status;
-            // RapidAPI often sends the reason in 'message' or data
+            // API-Football often sends the reason in 'message' or 'errors' object
             message = JSON.stringify(error.response.data) || error.response.statusText;
         }
 
