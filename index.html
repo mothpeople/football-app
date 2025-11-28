@@ -310,7 +310,8 @@
         const CONFIG = {
             // Set to TRUE to fetch from your Vercel backend. 
             // The relative path '/api/matches' works automatically when deployed.
-            USE_LIVE_DATA: true, 
+            // DEFAULTING TO FALSE (Demo Mode) to fix initial error. Set to true when Vercel API Key is fixed.
+            USE_LIVE_DATA: false, 
             
             // Your API Endpoint (Updated to your live Vercel URL)
             API_URL: 'https://football-app-livid.vercel.app/api/matches',
@@ -506,6 +507,8 @@
                 el.innerHTML = `<div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-[10px] text-emerald-600 font-bold">Live Data</span>`;
             } else if (type === 'success-empty') {
                 el.innerHTML = `<div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-[10px] text-emerald-600 font-bold">Live (No Games)</span>`;
+            } else if (type === 'manual-mock') { // New state
+                 el.innerHTML = `<div class="w-2 h-2 rounded-full bg-blue-400"></div><span class="text-[10px] text-blue-500 font-medium">Demo Mode</span>`;
             } else {
                 // Show error code if available
                 const errText = msg ? `Mock (${msg})` : 'Mock Mode';
@@ -613,7 +616,7 @@
                     renderMatches('All', mockMatches);
                 }
             } else {
-                updateStatus('error'); // Technically mock mode
+                updateStatus('manual-mock'); // Use the new neutral status
                 renderMatches('All', mockMatches);
             }
             
