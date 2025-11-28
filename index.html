@@ -309,8 +309,8 @@
         // --- APP CONFIGURATION ---
         const CONFIG = {
             // Set to TRUE to fetch from your Vercel backend. 
-            // The relative path '/api/matches' works automatically when deployed.
-            // DEFAULTING TO FALSE (Demo Mode) to fix initial error. Set to true when Vercel API Key is fixed.
+            // DEFAULTING TO FALSE (Demo Mode) because your Vercel server is returning 500 Errors.
+            // Fix Vercel (Redeploy with API_KEY) before setting this to true.
             USE_LIVE_DATA: false, 
             
             // Your API Endpoint (Updated to your live Vercel URL)
@@ -607,9 +607,16 @@
                     console.error("Live fetch failed:", e);
                     // Extract safe error message
                     let errMsg = "Error";
-                    if (e.message && e.message.includes("HTTP")) errMsg = e.message; 
-                    else if (e.name === 'TypeError') errMsg = "Network"; // often CORS or offline
-                    else if (e.name === 'AbortError') errMsg = "Timeout";
+                    if (e.message && e.message.includes("HTTP 500")) {
+                        errMsg = "Server Error";
+                        console.warn("HTTP 500 detected: Check Vercel Logs. Likely missing API Key or package.json.");
+                    } else if (e.message && e.message.includes("HTTP")) {
+                        errMsg = e.message; 
+                    } else if (e.name === 'TypeError') {
+                        errMsg = "Network"; // often CORS or offline
+                    } else if (e.name === 'AbortError') {
+                        errMsg = "Timeout";
+                    }
                     
                     updateStatus('error', errMsg);
                     liveData = []; // Reset on error
