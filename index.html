@@ -309,63 +309,97 @@
     </div>
 
     <script>
-        // --- DATA SERVICE (Mock Data Only for Reliability) ---
+        // --- DATA SERVICE (REAL) ---
         const DataService = {
-            async getMatches(filter) {
-                // Return immediate mock data
-                return this.getMockMatches();
+            // Helper to get YYYY-MM-DD format based on local time
+            getDateString(offsetDays = 0) {
+                const date = new Date();
+                date.setDate(date.getDate() + offsetDays);
+                // Adjust for timezone offsets if necessary, simplified here:
+                return date.toISOString().split('T')[0];
             },
 
-            getMockMatches() {
-                // Using "category" to distinguish Yesterday/Today/Tomorrow for filtering
-                return [
-                    // --- TODAY (Live & Upcoming) ---
-                    { id: 101, league: "Premier League", category: "today", home: "Man City", away: "Liverpool", homeLogo: "🔵", awayLogo: "🔴", score: "2 - 2", status: "LIVE", minute: "78'", events: [{ type: "goal", team: "home", player: "E. Haaland", time: "12'" }], stats: { possession: [58, 42], shots: [14, 10], xg: [2.1, 1.8] } },
-                    { id: 501, league: "SPL (Singapore)", category: "today", home: "Lion City Sailors", away: "Tampines Rovers", homeLogo: "🦁", awayLogo: "🦌", score: "3 - 2", status: "FT", minute: "FT", events: [{ type: "goal", team: "home", player: "Lestienne", time: "22'" }], stats: { possession: [52, 48], shots: [12, 14], xg: [2.5, 2.1] } },
-                    { id: 201, league: "V.League 1", category: "today", home: "Cong An Ha Noi", away: "Hanoi FC", homeLogo: "👮", awayLogo: "🟣", score: "1 - 0", status: "LIVE", minute: "32'", events: [{ type: "goal", team: "home", player: "Quang Hai", time: "15'" }], stats: { possession: [45, 55], shots: [4, 6], xg: [0.8, 0.4] } },
-                    { id: 402, league: "Serie A", category: "today", home: "Inter Milan", away: "Juventus", homeLogo: "⚫🔵", awayLogo: "⚫⚪", score: "0 - 0", status: "LIVE", minute: "15'", events: [], stats: { possession: [50, 50], shots: [2, 1], xg: [0.1, 0.1] } },
-                    { id: 403, league: "Ligue 1", category: "today", home: "PSG", away: "Marseille", homeLogo: "🗼", awayLogo: "🔵", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0, 0], shots: [0, 0], xg: [0, 0] } },
-                    { id: 801, league: "J1 League", category: "today", home: "Vissel Kobe", away: "Gamba Osaka", homeLogo: "⚓", awayLogo: "⚡", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [50, 50], shots: [8, 8], xg: [1.1, 0.9] } },
-                    
-                    // --- YESTERDAY (Results) ---
-                    { id: 401, league: "La Liga", category: "yesterday", home: "Real Madrid", away: "Barcelona", homeLogo: "👑", awayLogo: "💙", score: "1 - 3", status: "FT", minute: "FT", events: [{ type: "goal", team: "away", player: "Lewandowski", time: "10'" }], stats: { possession: [45, 55], shots: [9, 15], xg: [1.2, 3.1] } },
-                    { id: 304, league: "ACL Elite", category: "yesterday", home: "Yokohama F. M.", away: "Buriram Utd", homeLogo: "⚓", awayLogo: "⚡", score: "3 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [62, 38], shots: [18, 5], xg: [3.2, 0.4] } },
-                    { id: 502, league: "SPL (Singapore)", category: "yesterday", home: "Albirex Niigata (S)", away: "Lion City Sailors", homeLogo: "🦢", awayLogo: "🦁", score: "1 - 4", status: "FT", minute: "FT", events: [], stats: { possession: [40, 60], shots: [5, 12], xg: [0.5, 3.1] } },
-                    { id: 601, league: "World Cup Qualifiers", category: "yesterday", home: "Indonesia", away: "Saudi Arabia", homeLogo: "🦅", awayLogo: "🇸🇦", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [35, 65], shots: [5, 12], xg: [1.2, 0.8] } },
+            async getMatches(category = 'today') {
+                // 1. Calculate the actual date string
+                let dateStr = this.getDateString(0); // Default Today
+                if (category === 'yesterday') dateStr = this.getDateString(-1);
+                if (category === 'tomorrow') dateStr = this.getDateString(1);
 
-                    // --- TOMORROW (Fixtures) ---
-                    { id: 301, league: "Champions League", category: "tomorrow", home: "Man City", away: "Feyenoord", homeLogo: "🔵", awayLogo: "🔴", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0,0], shots: [0,0], xg: [0,0] } },
-                    { id: 302, league: "Europa League", category: "tomorrow", home: "Man Utd", away: "Bodo/Glimt", homeLogo: "🔴", awayLogo: "🟡", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0,0], shots: [0,0], xg: [0,0] } },
-                    { id: 303, league: "Conference League", category: "tomorrow", home: "Chelsea", away: "Heidenheim", homeLogo: "🔵", awayLogo: "🔴", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0,0], shots: [0,0], xg: [0,0] } },
-                    { id: 305, league: "ACL 2", category: "tomorrow", home: "Lion City Sailors", away: "Persib Bandung", homeLogo: "🦁", awayLogo: "🔵", score: "-", status: "19:45", minute: "", events: [], stats: { possession: [0,0], shots: [0,0], xg: [0,0] } },
+                // 2. Fetch from your backend if Config is TRUE
+                if (APP_CONFIG.USE_REAL_API) {
+                    try {
+                        // Call your new Vercel function with the date
+                        const res = await fetch(`${APP_CONFIG.API_ENDPOINT}?date=${dateStr}`);
+                        const realData = await res.json();
+                        
+                        // Transform API-Football data to your App's format
+                        return realData.map(m => ({
+                            id: m.fixture.id,
+                            league: m.league.name,
+                            category: category, 
+                            date: m.fixture.date,
+                            home: m.teams.home.name,
+                            away: m.teams.away.name,
+                            homeLogo: m.teams.home.logo, 
+                            awayLogo: m.teams.away.logo,
+                            score: m.fixture.status.short === 'NS' ? '-' : `${m.goals.home} - ${m.goals.away}`,
+                            // If Not Started (NS), show Time. Else show Status (FT, LIVE, etc)
+                            status: m.fixture.status.short === 'NS' ? (new Date(m.fixture.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : m.fixture.status.short,
+                            minute: m.fixture.status.elapsed + "'",
+                            events: [], // Events require a separate API call per match ID usually
+                            stats: { possession: [50,50], shots: [0,0], xg: [0,0] }
+                        }));
+                    } catch (e) {
+                        console.warn("API Error, using mock:", e);
+                        // Fallback to mock if API fails
+                        return this.getMockMatches().filter(m => m.category === category);
+                    }
+                } 
+                
+                // Fallback to Mock Data
+                return this.getMockMatches().filter(m => m.category === category);
+            },
+
+            // Keep your existing getMockMatches() function here!
+            getMockMatches() {
+                // ... (Your existing mock data list) ...
+                return [ 
+                    // ... paste your existing mock data array here ...
                 ];
             }
         };
 
-        // --- UI LOGIC ---
-        let allMatches = [];
-        let isDark = false; 
-        let currentDateFilter = 'today'; // Default filter
+        // --- UI LOGIC UPDATE ---
+        
+        async function setDateFilter(filter) {
+            currentDateFilter = filter;
+            
+            // UI: Update Buttons Highlighting
+            document.querySelectorAll('.date-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${filter}`).classList.add('active');
+            
+            // Show Loading State
+            document.getElementById('matchList').innerHTML = `
+                <div class="flex flex-col items-center justify-center h-64 text-[var(--text-muted)]">
+                    <div class="w-8 h-8 border-4 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p>Loading scores...</p>
+                </div>`;
 
+            // Fetch New Data (Passing the filter category: yesterday/today/tomorrow)
+            allMatches = await DataService.getMatches(filter);
+            renderMatches();
+        }
+
+        // Update init to pass 'today' by default
         async function init() {
             lucide.createIcons();
-            // Fetch mock data immediately
-            allMatches = await DataService.getMatches();
+            allMatches = await DataService.getMatches('today'); // Default
             renderMatches();
             
             document.getElementById('leagueSelect').addEventListener('change', () => {
                 renderMatches();
             });
         }
-        
-        function setDateFilter(filter) {
-            currentDateFilter = filter;
-            
-            // Update Buttons
-            document.querySelectorAll('.date-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`btn-${filter}`).classList.add('active');
-            
-            renderMatches();
         }
 
         function toggleTheme() {
