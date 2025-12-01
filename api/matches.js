@@ -1,86 +1,35 @@
+// File: api/matches.js
 const axios = require('axios');
-const NodeCache = require('node-cache');
-
-const myCache = new NodeCache({ stdTTL: 60 });
 
 module.exports = async (req, res) => {
-    // 1. Handle CORS
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+    // 1. Get the date from the frontend (or default to today)
+    // Format required by API-Football: YYYY-MM-DD
+    const { date } = req.query; 
+    const targetDate = date || new Date().toISOString().split('T')[0];
 
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-    }
+    // 2. Define the Leagues we care about (ID mapping from API-Football)
+    // 39=EPL, 140=La Liga, 135=Serie A, 61=Ligue 1, 2=UCL, 3=Europa, 
+    // 351=SPL, 336=V-League, 98=J1, 292=K1, 15=Asian Cup
+    const myLeagues = [39, 140, 135, 61, 2, 3, 351, 336, 98, 292, 15]; 
 
     try {
-        // 2. Check Cache
-        const cachedData = myCache.get("live_matches");
-        if (cachedData) {
-            return res.json(cachedData);
-        }
-
-        // 3. Validation
-        if (!process.env.API_KEY) {
-            throw new Error("SERVER CONFIG ERROR: API_KEY is missing in Vercel.");
-        }
-
-        // 4. Fetch from Real API (DIRECT API-SPORTS VERSION)
-        // Calculate today's date (UTC) to ensure we get a full list of games
-        const today = new Date().toISOString().split('T')[0];
-
-        const options = {
-            method: 'GET',
-            url: 'https://v3.football.api-sports.io/fixtures',
-            params: { date: today }, // CHANGED: Fetch 'Today' instead of just 'Live'
-            headers: {
-                'x-apisports-key': process.env.API_KEY.trim()
+        const response = await axios.get('https://v3.football.api-sports.io/fixtures', {
+            params: { 
+                date: targetDate, 
+                timezone: 'Asia/Singapore' // Adjust this if needed
+            },
+            headers: { 
+                'x-rapidapi-key': process.env.API_KEY // We will set this in Vercel
             }
-        };
-
-        const response = await axios.request(options);
-        
-        // 5. Transform & Return
-        const rawMatches = response.data.response;
-        
-        const cleanMatches = rawMatches.map(m => ({
-            id: m.fixture.id,
-            league: m.league.name,
-            date: "Today",
-            home: m.teams.home.name,
-            away: m.teams.away.name,
-            homeLogo: m.teams.home.logo,
-            awayLogo: m.teams.away.logo,
-            score: `${m.goals.home ?? 0} - ${m.goals.away ?? 0}`,
-            status: m.fixture.status.short, // FT, NS (Not Started), 1H, etc.
-            minute: m.fixture.status.elapsed + "'",
-            events: m.events || [],
-            stats: { 
-                possession: [50, 50], 
-                shots: [0, 0], 
-                xg: [0, 0] 
-            }
-        }));
-
-        myCache.set("live_matches", cleanMatches);
-        res.json(cleanMatches);
-
-    } catch (error) {
-        console.error("BACKEND ERROR:", error.message);
-        
-        let status = 500;
-        let message = error.message;
-
-        if (error.response) {
-            status = error.response.status;
-            message = JSON.stringify(error.response.data) || error.response.statusText;
-        }
-
-        res.status(status).json({ 
-            error: "Backend Error", 
-            details: message 
         });
+
+        // 3. Filter data to only show YOUR leagues
+        const allMatches = response.data.response;
+        const filteredMatches = allMatches.filter(m => myLeagues.includes(m.league.id));
+
+        res.status(200).json(filteredMatches);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to fetch data" });
     }
 };
