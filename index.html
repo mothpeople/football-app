@@ -9,7 +9,8 @@
     <link rel="icon" type="image/jpeg" href="/icon.jpg">
     <link rel="apple-touch-icon" href="/icon.jpg">
     
-    <!-- Social Tags -->
+    <!-- Social Tags (WhatsApp/Facebook) -->
+    <!-- Uses absolute URL for reliable social previews -->
     <meta property="og:title" content="What's the Score?">
     <meta property="og:description" content="Live football scores from Premier League, SPL, Champions League and more.">
     <meta property="og:image" content="https://football-app-livid.vercel.app/icon.jpg">
@@ -309,30 +310,36 @@
     </div>
 
     <script>
-        // --- DATA SERVICE (REAL) ---
+        // --- 1. CONFIGURATION ---
+        const APP_CONFIG = {
+            USE_REAL_API: true, // Enable Real Data support
+            API_ENDPOINT: '/api/matches' // Path to your Vercel backend function
+        };
+
+        // --- 2. DATA SERVICE ---
         const DataService = {
-            // Helper to get YYYY-MM-DD format based on local time
+            // Helper: Get YYYY-MM-DD date string based on offset (today=0, yesterday=-1)
             getDateString(offsetDays = 0) {
                 const date = new Date();
                 date.setDate(date.getDate() + offsetDays);
-                // Adjust for timezone offsets if necessary, simplified here:
                 return date.toISOString().split('T')[0];
             },
 
             async getMatches(category = 'today') {
-                // 1. Calculate the actual date string
-                let dateStr = this.getDateString(0); // Default Today
+                // 1. Determine Date
+                let dateStr = this.getDateString(0);
                 if (category === 'yesterday') dateStr = this.getDateString(-1);
                 if (category === 'tomorrow') dateStr = this.getDateString(1);
 
-                // 2. Fetch from your backend if Config is TRUE
+                // 2. Fetch Real Data
                 if (APP_CONFIG.USE_REAL_API) {
                     try {
-                        // Call your new Vercel function with the date
                         const res = await fetch(`${APP_CONFIG.API_ENDPOINT}?date=${dateStr}`);
+                        if (!res.ok) throw new Error("Backend not reachable");
+                        
                         const realData = await res.json();
                         
-                        // Transform API-Football data to your App's format
+                        // Transform API-Football data to App Format
                         return realData.map(m => ({
                             id: m.fixture.id,
                             league: m.league.name,
@@ -343,63 +350,80 @@
                             homeLogo: m.teams.home.logo, 
                             awayLogo: m.teams.away.logo,
                             score: m.fixture.status.short === 'NS' ? '-' : `${m.goals.home} - ${m.goals.away}`,
-                            // If Not Started (NS), show Time. Else show Status (FT, LIVE, etc)
+                            // Show Time if Not Started, else Status (FT, LIVE)
                             status: m.fixture.status.short === 'NS' ? (new Date(m.fixture.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : m.fixture.status.short,
                             minute: m.fixture.status.elapsed + "'",
-                            events: [], // Events require a separate API call per match ID usually
+                            events: [], 
                             stats: { possession: [50,50], shots: [0,0], xg: [0,0] }
                         }));
+
                     } catch (e) {
-                        console.warn("API Error, using mock:", e);
-                        // Fallback to mock if API fails
+                        console.warn("API Error or Offline. Using Mock Data.", e);
+                        // Fallback to Mock Data seamlessly
                         return this.getMockMatches().filter(m => m.category === category);
                     }
                 } 
                 
-                // Fallback to Mock Data
+                // Mock Mode Fallback
                 return this.getMockMatches().filter(m => m.category === category);
             },
 
-            // Keep your existing getMockMatches() function here!
             getMockMatches() {
-                // ... (Your existing mock data list) ...
-                return [ 
-                    // ... paste your existing mock data array here ...
+                // COMPLETE MOCK LIST (Backup)
+                return [
+                    // TODAY
+                    { id: 101, league: "Premier League", category: "today", home: "Man City", away: "Liverpool", homeLogo: "🔵", awayLogo: "🔴", score: "2 - 2", status: "LIVE", minute: "78'", events: [{ type: "goal", team: "home", player: "E. Haaland", time: "12'" }], stats: { possession: [58, 42], shots: [14, 10], xg: [2.1, 1.8] } },
+                    { id: 501, league: "SPL (Singapore)", category: "today", home: "Lion City Sailors", away: "Tampines Rovers", homeLogo: "🦁", awayLogo: "🦌", score: "3 - 2", status: "FT", minute: "FT", events: [{ type: "goal", team: "home", player: "Lestienne", time: "22'" }], stats: { possession: [52, 48], shots: [12, 14], xg: [2.5, 2.1] } },
+                    { id: 201, league: "V.League 1", category: "today", home: "Cong An Ha Noi", away: "Hanoi FC", homeLogo: "👮", awayLogo: "🟣", score: "1 - 0", status: "LIVE", minute: "32'", events: [{ type: "goal", team: "home", player: "Quang Hai", time: "15'" }], stats: { possession: [45, 55], shots: [4, 6], xg: [0.8, 0.4] } },
+                    { id: 402, league: "Serie A", category: "today", home: "Inter Milan", away: "Juventus", homeLogo: "⚫🔵", awayLogo: "⚫⚪", score: "0 - 0", status: "LIVE", minute: "15'", events: [], stats: { possession: [50, 50], shots: [2, 1], xg: [0.1, 0.1] } },
+                    { id: 801, league: "J1 League", category: "today", home: "Vissel Kobe", away: "Gamba Osaka", homeLogo: "⚓", awayLogo: "⚡", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [50, 50], shots: [8, 8], xg: [1.1, 0.9] } },
+                    
+                    // YESTERDAY
+                    { id: 401, league: "La Liga", category: "yesterday", home: "Real Madrid", away: "Barcelona", homeLogo: "👑", awayLogo: "💙", score: "1 - 3", status: "FT", minute: "FT", events: [{ type: "goal", team: "away", player: "Lewandowski", time: "10'" }], stats: { possession: [45, 55], shots: [9, 15], xg: [1.2, 3.1] } },
+                    { id: 304, league: "ACL Elite", category: "yesterday", home: "Yokohama F. M.", away: "Buriram Utd", homeLogo: "⚓", awayLogo: "⚡", score: "3 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [62, 38], shots: [18, 5], xg: [3.2, 0.4] } },
+                    { id: 502, league: "SPL (Singapore)", category: "yesterday", home: "Albirex Niigata (S)", away: "Lion City Sailors", homeLogo: "🦢", awayLogo: "🦁", score: "1 - 4", status: "FT", minute: "FT", events: [], stats: { possession: [40, 60], shots: [5, 12], xg: [0.5, 3.1] } },
+                    { id: 601, league: "World Cup Qualifiers", category: "yesterday", home: "Indonesia", away: "Saudi Arabia", homeLogo: "🦅", awayLogo: "🇸🇦", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [35, 65], shots: [5, 12], xg: [1.2, 0.8] } },
+
+                    // TOMORROW
+                    { id: 301, league: "Champions League", category: "tomorrow", home: "Man City", away: "Feyenoord", homeLogo: "🔵", awayLogo: "🔴", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0,0], shots: [0,0], xg: [0,0] } },
+                    { id: 302, league: "Europa League", category: "tomorrow", home: "Man Utd", away: "Bodo/Glimt", homeLogo: "🔴", awayLogo: "🟡", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0,0], shots: [0,0], xg: [0,0] } },
+                    { id: 305, league: "ACL 2", category: "tomorrow", home: "Lion City Sailors", away: "Persib Bandung", homeLogo: "🦁", awayLogo: "🔵", score: "-", status: "19:45", minute: "", events: [], stats: { possession: [0,0], shots: [0,0], xg: [0,0] } },
                 ];
             }
         };
 
-        // --- UI LOGIC UPDATE ---
+        // --- 3. UI LOGIC ---
+        let allMatches = [];
+        let isDark = false; 
+        let currentDateFilter = 'today';
+
+        async function init() {
+            lucide.createIcons();
+            // Initial Load: Today
+            await setDateFilter('today');
+            
+            document.getElementById('leagueSelect').addEventListener('change', () => {
+                renderMatches();
+            });
+        }
         
         async function setDateFilter(filter) {
             currentDateFilter = filter;
             
-            // UI: Update Buttons Highlighting
+            // UI: Update Buttons
             document.querySelectorAll('.date-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`btn-${filter}`).classList.add('active');
             
-            // Show Loading State
+            // Show Loading UI
             document.getElementById('matchList').innerHTML = `
                 <div class="flex flex-col items-center justify-center h-64 text-[var(--text-muted)]">
                     <div class="w-8 h-8 border-4 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin mb-4"></div>
                     <p>Loading scores...</p>
                 </div>`;
 
-            // Fetch New Data (Passing the filter category: yesterday/today/tomorrow)
+            // Fetch Data
             allMatches = await DataService.getMatches(filter);
             renderMatches();
-        }
-
-        // Update init to pass 'today' by default
-        async function init() {
-            lucide.createIcons();
-            allMatches = await DataService.getMatches('today'); // Default
-            renderMatches();
-            
-            document.getElementById('leagueSelect').addEventListener('change', () => {
-                renderMatches();
-            });
-        }
         }
 
         function toggleTheme() {
@@ -471,7 +495,6 @@
                         </div>
                     </div>`;
             } else {
-                // For Following, we show ALL matches for that team, regardless of date
                 const teamMatches = allMatches.filter(m => m.home === favoriteTeam || m.away === favoriteTeam);
                 let headerHTML = `
                     <div class="flex items-center justify-between mb-6">
@@ -482,8 +505,9 @@
                         <button onclick="clearFavorite()" class="text-xs text-[var(--text-muted)] underline">Change</button>
                     </div>`;
 
+                // NOTE: Ideally, 'Following' should fetch history from API too, but here we just show what we have in memory
                 if (teamMatches.length === 0) {
-                    container.innerHTML = headerHTML + `<div class="text-center text-[var(--text-muted)] mt-10">No recent matches found for this team.</div>`;
+                    container.innerHTML = headerHTML + `<div class="text-center text-[var(--text-muted)] mt-10">No recent matches found in current list.</div>`;
                 } else {
                     let listHTML = `<div class="space-y-3">`;
                     teamMatches.forEach(match => {
@@ -511,10 +535,10 @@
             const leagueFilter = document.getElementById('leagueSelect').value;
             container.innerHTML = '';
             
-            // 1. Filter by Date (Category)
-            let matches = allMatches.filter(m => m.category === currentDateFilter);
+            // matches are already filtered by date from getMatches()
+            let matches = allMatches;
 
-            // 2. Filter by League
+            // Filter by League
             if (leagueFilter !== 'All') {
                 matches = matches.filter(m => m.league === leagueFilter);
             }
@@ -525,7 +549,7 @@
                 return;
             }
 
-            // Sort: Live first, then by League
+            // Sort: Live first, then League
             matches.sort((a,b) => {
                 if (a.status === 'LIVE' && b.status !== 'LIVE') return -1;
                 if (a.status !== 'LIVE' && b.status === 'LIVE') return 1;
@@ -548,9 +572,9 @@
                 div.onclick = () => openModal(match.id);
                 div.innerHTML = `
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-3 w-[35%]"><div class="text-lg">${match.homeLogo}</div><span class="text-sm font-semibold truncate text-[var(--text-main)]">${match.home}</span></div>
+                        <div class="flex items-center space-x-3 w-[35%]"><div class="text-lg">${match.homeLogo.startsWith('http') ? `<img src="${match.homeLogo}" class="w-6 h-6 object-contain">` : match.homeLogo}</div><span class="text-sm font-semibold truncate text-[var(--text-main)]">${match.home}</span></div>
                         <div class="flex flex-col items-center w-[30%]"><span class="text-2xl font-bold tracking-tight font-display tabular-nums text-[var(--text-main)]">${match.score}</span><span class="text-[10px] mt-1 uppercase tracking-wide" style="${statusStyle}">${timeOrScore}</span></div>
-                        <div class="flex items-center justify-end space-x-3 w-[35%]"><span class="text-sm font-semibold truncate text-[var(--text-main)] text-right">${match.away}</span><div class="text-lg">${match.awayLogo}</div></div>
+                        <div class="flex items-center justify-end space-x-3 w-[35%]"><span class="text-sm font-semibold truncate text-[var(--text-main)] text-right">${match.away}</span><div class="text-lg">${match.awayLogo.startsWith('http') ? `<img src="${match.awayLogo}" class="w-6 h-6 object-contain">` : match.awayLogo}</div></div>
                     </div>`;
                 container.appendChild(div);
             });
@@ -565,8 +589,8 @@
             document.getElementById('modalHomeName').textContent = match.home;
             document.getElementById('modalAwayName').textContent = match.away;
             document.getElementById('modalScore').textContent = match.score;
-            document.getElementById('modalHomeLogo').textContent = match.homeLogo;
-            document.getElementById('modalAwayLogo').textContent = match.awayLogo;
+            document.getElementById('modalHomeLogo').innerHTML = match.homeLogo.startsWith('http') ? `<img src="${match.homeLogo}" class="w-12 h-12 object-contain">` : match.homeLogo;
+            document.getElementById('modalAwayLogo').innerHTML = match.awayLogo.startsWith('http') ? `<img src="${match.awayLogo}" class="w-12 h-12 object-contain">` : match.awayLogo;
 
             const statusEl = document.getElementById('modalStatus');
             if (match.status === 'LIVE') {
