@@ -9,10 +9,9 @@
     <link rel="icon" type="image/jpeg" href="/icon.jpg">
     <link rel="apple-touch-icon" href="/icon.jpg">
     
-    <!-- Social Tags (WhatsApp/Facebook) -->
+    <!-- Social Tags -->
     <meta property="og:title" content="What's the Score?">
     <meta property="og:description" content="Live football scores from Premier League, SPL, Champions League and more.">
-    <!-- Note: Replace this domain with your actual Vercel domain for the image to show on WhatsApp -->
     <meta property="og:image" content="https://football-app-livid.vercel.app/icon.jpg">
     <meta property="og:url" content="https://football-app-livid.vercel.app">
     <meta property="og:type" content="website">
@@ -115,6 +114,14 @@
         .modal-enter { transform: translateY(100%); }
         .modal-enter-active { transform: translateY(0); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         .modal-exit-active { transform: translateY(100%); transition: transform 0.3s ease-in; }
+        
+        /* Date button active state */
+        .date-btn.active {
+            background-color: var(--accent-primary);
+            color: white;
+            box-shadow: 0 4px 12px var(--accent-glow);
+            border-color: transparent;
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden" data-theme="light">
@@ -123,8 +130,6 @@
     <header class="flex-none px-5 py-4 flex items-center justify-between z-20 theme-bg-card border-b theme-border">
         <div class="flex items-center gap-2">
             <h1 class="text-xl font-bold tracking-tight font-display">What's the Score?</h1>
-            <!-- API Status Indicator -->
-            <div id="apiStatus" class="hidden px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border"></div>
         </div>
         
         <div class="flex items-center space-x-3">
@@ -140,16 +145,19 @@
     <!-- VIEW: MATCHES -->
     <div id="view-matches" class="view-section active flex-1 overflow-hidden relative">
         <div class="flex-none pb-2 z-10 space-y-3 pt-3">
-            <div class="flex space-x-3 overflow-x-auto px-4 pb-2 no-scrollbar">
-                <button class="flex-none px-4 py-2 rounded-full theme-bg-card border theme-border text-[var(--text-muted)] text-xs font-medium">Yesterday</button>
-                <button class="flex-none px-4 py-2 rounded-full theme-accent text-white shadow-lg text-xs font-bold">Today</button>
-                <button class="flex-none px-4 py-2 rounded-full theme-bg-card border theme-border text-[var(--text-muted)] text-xs font-medium">Tomorrow</button>
+            
+            <!-- Date Scroller (Functional) -->
+            <div class="flex justify-between items-center px-4 pb-2 space-x-2">
+                <button onclick="setDateFilter('yesterday')" id="btn-yesterday" class="date-btn flex-1 py-2 rounded-full theme-bg-card border theme-border text-[var(--text-muted)] text-xs font-medium transition-all">Yesterday</button>
+                <button onclick="setDateFilter('today')" id="btn-today" class="date-btn active flex-1 py-2 rounded-full theme-bg-card border theme-border text-[var(--text-muted)] text-xs font-medium transition-all">Today</button>
+                <button onclick="setDateFilter('tomorrow')" id="btn-tomorrow" class="date-btn flex-1 py-2 rounded-full theme-bg-card border theme-border text-[var(--text-muted)] text-xs font-medium transition-all">Tomorrow</button>
             </div>
 
+            <!-- League Selector -->
             <div class="px-4">
                 <div class="relative group">
                     <select id="leagueSelect" class="w-full theme-bg-card text-[var(--text-main)] p-3 pl-10 rounded-xl border theme-border focus:outline-none appearance-none font-medium text-sm transition-all shadow-sm">
-                        <option value="All">Live & Top Matches</option>
+                        <option value="All">All Competitions</option>
                         <optgroup label="Europe">
                             <option value="Premier League">English Premier League</option>
                             <option value="La Liga">Spanish La Liga</option>
@@ -202,14 +210,37 @@
     <div id="view-news" class="view-section flex-1 overflow-hidden relative">
         <div class="p-4 flex-1 overflow-y-auto pb-24 space-y-4">
             <h2 class="text-lg font-display font-bold px-2">Latest Headlines</h2>
+            
             <div class="card-gradient rounded-xl overflow-hidden shadow-sm">
-                <div class="h-32 bg-gray-200 relative">
+                <div class="h-40 bg-gray-200 relative">
                      <img src="https://images.unsplash.com/photo-1522778119026-d647f0565c6a?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover">
-                     <div class="absolute bottom-0 left-0 bg-black/50 text-white text-[10px] px-2 py-1">SPL (Singapore)</div>
+                     <div class="absolute bottom-0 left-0 bg-black/60 text-white text-[10px] px-2 py-1 font-bold uppercase">SPL (Singapore)</div>
                 </div>
                 <div class="p-4">
-                    <h3 class="font-bold text-sm mb-1 text-[var(--text-main)]">Lion City Sailors secure crucial 3 points</h3>
-                    <p class="text-xs text-[var(--text-muted)] line-clamp-2">A dramatic late winner from Shawal Anuar keeps the title race alive as the Sailors edge past Tampines in a thriller.</p>
+                    <h3 class="font-bold text-sm mb-2 text-[var(--text-main)]">Lion City Sailors secure crucial 3 points in title chase</h3>
+                    <p class="text-xs text-[var(--text-muted)] line-clamp-2">A dramatic late winner from Shawal Anuar keeps the title race alive as the Sailors edge past Tampines in a thriller at Jalan Besar.</p>
+                </div>
+            </div>
+
+            <div class="card-gradient rounded-xl overflow-hidden shadow-sm">
+                <div class="h-40 bg-gray-200 relative">
+                     <img src="https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover">
+                     <div class="absolute bottom-0 left-0 bg-black/60 text-white text-[10px] px-2 py-1 font-bold uppercase">Premier League</div>
+                </div>
+                <div class="p-4">
+                    <h3 class="font-bold text-sm mb-2 text-[var(--text-main)]">Haaland breaks another scoring record</h3>
+                    <p class="text-xs text-[var(--text-muted)] line-clamp-2">The Manchester City striker continues his incredible form, netting his 50th goal of the season in record time.</p>
+                </div>
+            </div>
+
+            <div class="card-gradient rounded-xl overflow-hidden shadow-sm">
+                <div class="h-40 bg-gray-200 relative">
+                     <img src="https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover">
+                     <div class="absolute bottom-0 left-0 bg-black/60 text-white text-[10px] px-2 py-1 font-bold uppercase">ACL Elite</div>
+                </div>
+                <div class="p-4">
+                    <h3 class="font-bold text-sm mb-2 text-[var(--text-main)]">Yokohama F. Marinos advance to knockouts</h3>
+                    <p class="text-xs text-[var(--text-muted)] line-clamp-2">A commanding performance at home sees the J-League giants through to the next round of the AFC Champions League Elite.</p>
                 </div>
             </div>
         </div>
@@ -278,80 +309,65 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURATION ---
-        const APP_CONFIG = {
-            USE_REAL_API: true, // CHANGE THIS TO TRUE IF YOU HAVE SET UP THE BACKEND
-            API_ENDPOINT: '/api/matches' // Your Vercel function path
-        };
-
-        // --- 2. DATA SERVICE (Mock + Real Support) ---
+        // --- DATA SERVICE (Mock Data Only for Reliability) ---
         const DataService = {
             async getMatches(filter) {
-                // Update Status Indicator
-                const statusEl = document.getElementById('apiStatus');
-                statusEl.classList.remove('hidden');
-                
-                if (APP_CONFIG.USE_REAL_API) {
-                    statusEl.textContent = "LIVE DATA";
-                    statusEl.className = "px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border border-green-500 text-green-500 bg-green-500/10";
-                    try {
-                        const res = await fetch(`${APP_CONFIG.API_ENDPOINT}?league=${filter}`);
-                        if (!res.ok) throw new Error('Network error');
-                        return await res.json();
-                    } catch (e) {
-                        console.warn("API failed, using mock", e);
-                        // Fallback to mock on error
-                    }
-                } 
-                
-                // Mock Mode
-                statusEl.textContent = "MOCK MODE";
-                statusEl.className = "px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border border-amber-500 text-amber-500 bg-amber-500/10";
-                
-                // Simulate network delay
-                return new Promise(resolve => setTimeout(() => resolve(this.getMockMatches()), 300));
+                // Return immediate mock data
+                return this.getMockMatches();
             },
 
             getMockMatches() {
-                // COMPLETE MOCK LIST
+                // Using "category" to distinguish Yesterday/Today/Tomorrow for filtering
                 return [
-                    { id: 101, league: "Premier League", date: "Today", home: "Man City", away: "Liverpool", homeLogo: "🔵", awayLogo: "🔴", score: "2 - 2", status: "LIVE", minute: "78'", events: [{ type: "goal", team: "home", player: "E. Haaland", time: "12'" }], stats: { possession: [58, 42], shots: [14, 10], xg: [2.1, 1.8] } },
-                    { id: 501, league: "SPL (Singapore)", date: "Today", home: "Lion City Sailors", away: "Tampines Rovers", homeLogo: "🦁", awayLogo: "🦌", score: "3 - 2", status: "FT", minute: "FT", events: [{ type: "goal", team: "home", player: "Lestienne", time: "22'" }], stats: { possession: [52, 48], shots: [12, 14], xg: [2.5, 2.1] } },
-                    { id: 502, league: "SPL (Singapore)", date: "24 Nov", home: "Albirex Niigata (S)", away: "Lion City Sailors", homeLogo: "🦢", awayLogo: "🦁", score: "1 - 4", status: "FT", minute: "FT", events: [], stats: { possession: [40, 60], shots: [5, 12], xg: [0.5, 3.1] } },
-                    { id: 201, league: "V.League 1", date: "Today", home: "Cong An Ha Noi", away: "Hanoi FC", homeLogo: "👮", awayLogo: "🟣", score: "1 - 0", status: "LIVE", minute: "32'", events: [{ type: "goal", team: "home", player: "Quang Hai", time: "15'" }], stats: { possession: [45, 55], shots: [4, 6], xg: [0.8, 0.4] } },
-                    { id: 801, league: "J1 League", date: "Today", home: "Vissel Kobe", away: "Gamba Osaka", homeLogo: "⚓", awayLogo: "⚡", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [50, 50], shots: [8, 8], xg: [1.1, 0.9] } },
-                    { id: 802, league: "K League 1", date: "Today", home: "Ulsan HD", away: "Jeonbuk Motors", homeLogo: "🐯", awayLogo: "🟢", score: "1 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [55, 45], shots: [10, 8], xg: [1.2, 1.1] } },
-                    { id: 401, league: "La Liga", date: "Yesterday", home: "Real Madrid", away: "Barcelona", homeLogo: "👑", awayLogo: "💙", score: "1 - 3", status: "FT", minute: "FT", events: [{ type: "goal", team: "away", player: "Lewandowski", time: "10'" }], stats: { possession: [45, 55], shots: [9, 15], xg: [1.2, 3.1] } },
-                    { id: 402, league: "Serie A", date: "Today", home: "Inter Milan", away: "Juventus", homeLogo: "⚫🔵", awayLogo: "⚫⚪", score: "0 - 0", status: "LIVE", minute: "15'", events: [], stats: { possession: [50, 50], shots: [2, 1], xg: [0.1, 0.1] } },
-                    { id: 403, league: "Ligue 1", date: "Today", home: "PSG", away: "Marseille", homeLogo: "🗼", awayLogo: "🔵", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0, 0], shots: [0, 0], xg: [0, 0] } },
-                    { id: 301, league: "Champions League", date: "Tue", home: "Man City", away: "Feyenoord", homeLogo: "🔵", awayLogo: "🔴", score: "3 - 3", status: "FT", minute: "FT", events: [], stats: { possession: [60, 40], shots: [20, 5], xg: [3.5, 0.8] } },
-                    { id: 302, league: "Europa League", date: "Thu", home: "Man Utd", away: "Bodo/Glimt", homeLogo: "🔴", awayLogo: "🟡", score: "3 - 2", status: "FT", minute: "FT", events: [], stats: { possession: [65, 35], shots: [18, 6], xg: [2.5, 0.9] } },
-                    { id: 303, league: "Conference League", date: "Thu", home: "Chelsea", away: "Heidenheim", homeLogo: "🔵", awayLogo: "🔴", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [70, 30], shots: [12, 4], xg: [2.1, 0.3] } },
-                    { id: 304, league: "ACL Elite", date: "Yesterday", home: "Yokohama F. M.", away: "Buriram Utd", homeLogo: "⚓", awayLogo: "⚡", score: "3 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [62, 38], shots: [18, 5], xg: [3.2, 0.4] } },
-                    { id: 305, league: "ACL 2", date: "Wed", home: "Lion City Sailors", away: "Persib Bandung", homeLogo: "🦁", awayLogo: "🔵", score: "2 - 3", status: "FT", minute: "FT", events: [], stats: { possession: [48, 52], shots: [10, 12], xg: [1.5, 1.8] } },
-                    { id: 601, league: "World Cup Qualifiers", date: "Last Week", home: "Indonesia", away: "Saudi Arabia", homeLogo: "🦅", awayLogo: "🇸🇦", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [35, 65], shots: [5, 12], xg: [1.2, 0.8] } },
-                    { id: 602, league: "UEFA EURO", date: "Final", home: "Spain", away: "England", homeLogo: "🇪🇸", awayLogo: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", score: "2 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [60, 40], shots: [15, 8], xg: [1.8, 0.9] } },
-                    { id: 603, league: "AFC Asian Cup", date: "Final", home: "Jordan", away: "Qatar", homeLogo: "🇯🇴", awayLogo: "🇶🇦", score: "1 - 3", status: "FT", minute: "FT", events: [], stats: { possession: [45, 55], shots: [10, 12], xg: [1.1, 2.1] } },
-                    { id: 604, league: "Friendlies", date: "Today", home: "Thailand", away: "Vietnam", homeLogo: "🇹🇭", awayLogo: "🇻🇳", score: "-", status: "19:30", minute: "", events: [], stats: { possession: [50, 50], shots: [0, 0], xg: [0, 0] } }
+                    // --- TODAY (Live & Upcoming) ---
+                    { id: 101, league: "Premier League", category: "today", home: "Man City", away: "Liverpool", homeLogo: "🔵", awayLogo: "🔴", score: "2 - 2", status: "LIVE", minute: "78'", events: [{ type: "goal", team: "home", player: "E. Haaland", time: "12'" }], stats: { possession: [58, 42], shots: [14, 10], xg: [2.1, 1.8] } },
+                    { id: 501, league: "SPL (Singapore)", category: "today", home: "Lion City Sailors", away: "Tampines Rovers", homeLogo: "🦁", awayLogo: "🦌", score: "3 - 2", status: "FT", minute: "FT", events: [{ type: "goal", team: "home", player: "Lestienne", time: "22'" }], stats: { possession: [52, 48], shots: [12, 14], xg: [2.5, 2.1] } },
+                    { id: 201, league: "V.League 1", category: "today", home: "Cong An Ha Noi", away: "Hanoi FC", homeLogo: "👮", awayLogo: "🟣", score: "1 - 0", status: "LIVE", minute: "32'", events: [{ type: "goal", team: "home", player: "Quang Hai", time: "15'" }], stats: { possession: [45, 55], shots: [4, 6], xg: [0.8, 0.4] } },
+                    { id: 402, league: "Serie A", category: "today", home: "Inter Milan", away: "Juventus", homeLogo: "⚫🔵", awayLogo: "⚫⚪", score: "0 - 0", status: "LIVE", minute: "15'", events: [], stats: { possession: [50, 50], shots: [2, 1], xg: [0.1, 0.1] } },
+                    { id: 403, league: "Ligue 1", category: "today", home: "PSG", away: "Marseille", homeLogo: "🗼", awayLogo: "🔵", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0, 0], shots: [0, 0], xg: [0, 0] } },
+                    { id: 801, league: "J1 League", category: "today", home: "Vissel Kobe", away: "Gamba Osaka", homeLogo: "⚓", awayLogo: "⚡", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [50, 50], shots: [8, 8], xg: [1.1, 0.9] } },
+                    
+                    // --- YESTERDAY (Results) ---
+                    { id: 401, league: "La Liga", category: "yesterday", home: "Real Madrid", away: "Barcelona", homeLogo: "👑", awayLogo: "💙", score: "1 - 3", status: "FT", minute: "FT", events: [{ type: "goal", team: "away", player: "Lewandowski", time: "10'" }], stats: { possession: [45, 55], shots: [9, 15], xg: [1.2, 3.1] } },
+                    { id: 304, league: "ACL Elite", category: "yesterday", home: "Yokohama F. M.", away: "Buriram Utd", homeLogo: "⚓", awayLogo: "⚡", score: "3 - 1", status: "FT", minute: "FT", events: [], stats: { possession: [62, 38], shots: [18, 5], xg: [3.2, 0.4] } },
+                    { id: 502, league: "SPL (Singapore)", category: "yesterday", home: "Albirex Niigata (S)", away: "Lion City Sailors", homeLogo: "🦢", awayLogo: "🦁", score: "1 - 4", status: "FT", minute: "FT", events: [], stats: { possession: [40, 60], shots: [5, 12], xg: [0.5, 3.1] } },
+                    { id: 601, league: "World Cup Qualifiers", category: "yesterday", home: "Indonesia", away: "Saudi Arabia", homeLogo: "🦅", awayLogo: "🇸🇦", score: "2 - 0", status: "FT", minute: "FT", events: [], stats: { possession: [35, 65], shots: [5, 12], xg: [1.2, 0.8] } },
+
+                    // --- TOMORROW (Fixtures) ---
+                    { id: 301, league: "Champions League", category: "tomorrow", home: "Man City", away: "Feyenoord", homeLogo: "🔵", awayLogo: "🔴", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0,0], shots: [0,0], xg: [0,0] } },
+                    { id: 302, league: "Europa League", category: "tomorrow", home: "Man Utd", away: "Bodo/Glimt", homeLogo: "🔴", awayLogo: "🟡", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0,0], shots: [0,0], xg: [0,0] } },
+                    { id: 303, league: "Conference League", category: "tomorrow", home: "Chelsea", away: "Heidenheim", homeLogo: "🔵", awayLogo: "🔴", score: "-", status: "20:00", minute: "", events: [], stats: { possession: [0,0], shots: [0,0], xg: [0,0] } },
+                    { id: 305, league: "ACL 2", category: "tomorrow", home: "Lion City Sailors", away: "Persib Bandung", homeLogo: "🦁", awayLogo: "🔵", score: "-", status: "19:45", minute: "", events: [], stats: { possession: [0,0], shots: [0,0], xg: [0,0] } },
                 ];
             }
         };
 
-        // --- 3. UI LOGIC ---
+        // --- UI LOGIC ---
         let allMatches = [];
         let isDark = false; 
+        let currentDateFilter = 'today'; // Default filter
 
         async function init() {
             lucide.createIcons();
-            // Fetch data (Mock or Real)
-            allMatches = await DataService.getMatches('All');
-            renderMatches('All');
+            // Fetch mock data immediately
+            allMatches = await DataService.getMatches();
+            renderMatches();
             
-            document.getElementById('leagueSelect').addEventListener('change', (e) => {
-                renderMatches(e.target.value);
+            document.getElementById('leagueSelect').addEventListener('change', () => {
+                renderMatches();
             });
         }
         
+        function setDateFilter(filter) {
+            currentDateFilter = filter;
+            
+            // Update Buttons
+            document.querySelectorAll('.date-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${filter}`).classList.add('active');
+            
+            renderMatches();
+        }
+
         function toggleTheme() {
             isDark = !isDark;
             const body = document.body;
@@ -421,6 +437,7 @@
                         </div>
                     </div>`;
             } else {
+                // For Following, we show ALL matches for that team, regardless of date
                 const teamMatches = allMatches.filter(m => m.home === favoriteTeam || m.away === favoriteTeam);
                 let headerHTML = `
                     <div class="flex items-center justify-between mb-6">
@@ -439,7 +456,7 @@
                         const isLive = match.status === 'LIVE';
                         listHTML += `
                             <div onclick="openModal(${match.id})" class="card-gradient rounded-xl p-4 shadow-sm border theme-border flex items-center justify-between cursor-pointer">
-                                <div class="text-xs font-bold text-[var(--text-muted)] w-12">${match.status === 'FT' ? match.date || 'Today' : match.status}</div>
+                                <div class="text-xs font-bold text-[var(--text-muted)] w-12">${match.status === 'FT' ? (match.category === 'yesterday' ? 'Yesterday' : 'Today') : match.status}</div>
                                 <div class="flex-1 flex flex-col items-center">
                                     <div class="flex items-center justify-center space-x-2 text-sm font-semibold text-[var(--text-main)]">
                                         <span>${match.home}</span><span class="text-[var(--text-muted)]">vs</span><span>${match.away}</span>
@@ -455,31 +472,35 @@
             lucide.createIcons();
         }
 
-        function renderMatches(filterLeague) {
+        function renderMatches() {
             const container = document.getElementById('matchList');
+            const leagueFilter = document.getElementById('leagueSelect').value;
             container.innerHTML = '';
-            const matchesToRender = filterLeague === 'All' ? allMatches : allMatches.filter(m => m.league === filterLeague);
+            
+            // 1. Filter by Date (Category)
+            let matches = allMatches.filter(m => m.category === currentDateFilter);
 
-            if (matchesToRender.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-64 text-[var(--text-muted)]"><i data-lucide="calendar-off" class="w-12 h-12 mb-4 opacity-50"></i><p class="font-medium">No matches found.</p></div>`;
+            // 2. Filter by League
+            if (leagueFilter !== 'All') {
+                matches = matches.filter(m => m.league === leagueFilter);
+            }
+
+            if (matches.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-64 text-[var(--text-muted)]"><i data-lucide="calendar-off" class="w-12 h-12 mb-4 opacity-50"></i><p class="font-medium">No matches found for ${currentDateFilter}.</p></div>`;
                 lucide.createIcons();
                 return;
             }
 
-            let displayMatches = matchesToRender;
-            // Clean up "All" view to show only today/live/major
-            if (filterLeague === 'All') {
-                displayMatches = matchesToRender.filter(m => m.status === 'LIVE' || m.date === 'Today' || m.league === 'Premier League' || m.league === 'SPL (Singapore)');
-            }
-            displayMatches.sort((a,b) => {
+            // Sort: Live first, then by League
+            matches.sort((a,b) => {
                 if (a.status === 'LIVE' && b.status !== 'LIVE') return -1;
                 if (a.status !== 'LIVE' && b.status === 'LIVE') return 1;
-                return 0;
+                return a.league.localeCompare(b.league);
             });
 
             let currentLeagueHeader = '';
-            displayMatches.forEach(match => {
-                if (filterLeague === 'All' && match.league !== currentLeagueHeader) {
+            matches.forEach(match => {
+                if (match.league !== currentLeagueHeader) {
                     currentLeagueHeader = match.league;
                     container.innerHTML += `<div class="flex items-center space-x-2 pt-4 pb-2 sticky top-0 bg-[var(--bg-body)] z-0 transition-colors duration-300"><div class="w-1 h-4 theme-accent rounded-full"></div><h2 class="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest font-display">${match.league}</h2></div>`;
                 }
